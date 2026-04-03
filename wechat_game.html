@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>澳门金尊产品知识记忆游戏</title>
+    <meta name="description" content="翻转卡片，匹配产品货号和产品名称，轻松记忆澳门金尊产品知识">
+    <meta name="keywords" content="澳门金尊,产品知识,记忆游戏,员工培训,货号识别">
+    <style>
+        /* 基础重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* 游戏容器 */
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* 游戏头部 */
+        .game-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .game-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .game-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .company-logo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* 游戏状态栏 */
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        #timer {
+            color: #e74c3c;
+        }
+
+        #score {
+            color: #27ae60;
+        }
+
+        /* 游戏控制 */
+        .game-controls {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .difficulty-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            max-width: 100px;
+        }
+
+        .difficulty-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .game-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .game-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .game-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .game-btn.primary:active {
+            background: #5a67d8;
+            transform: scale(0.98);
+        }
+
+        .game-btn.secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .game-btn.secondary:active {
+            background: #e9ecef;
+            transform: scale(0.98);
+        }
+
+        /* 游戏棋盘 */
+        .game-board {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            min-height: 400px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            aspect-ratio: 3/4;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .card-front .card-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .card-front .card-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+            border: 2px solid #667eea;
+        }
+
+        .card-back.code {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .card-back.name {
+            background: #f3e5f5;
+            border-color: #9c27b0;
+        }
+
+        .card-type {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .card.matched {
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .card.matched .card-back {
+            background: #d4edda;
+            border-color: #27ae60;
+        }
+
+        /* 游戏结果 */
+        .game-result {
+            padding: 30px 20px;
+            background: white;
+            text-align: center;
+            display: none;
+        }
+
+        .result-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .result-stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .result-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .result-stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .result-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            padding: 0 10px;
+        }
+
+        .result-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* 产品列表 */
+        .product-list {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .product-list-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .product-list-title i {
+            color: #667eea;
+        }
+
+        .product-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .product-category {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .category-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-title i {
+            color: #667eea;
+        }
+
+        .product-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .product-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .product-code {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .product-name {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* 游戏说明 */
+        .game-instructions {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .instructions-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .instruction-icon {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .instruction-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 页脚 */
+        .game-footer {
+            padding: 20px;
+            background: #f8f9fa;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .footer-note {
+            font-size: 11px;
+            color: #999;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            .game-title {
+                font-size: 20px;
+            }
+            
+            .stat-value {
+                font-size: 18px;
+            }
+            
+            .card-value {
+                font-size: 14px;
+            }
+            
+            .product-items {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .game-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .difficulty-selector {
+                flex-wrap: wrap;
+            }
+            
+            .difficulty-btn {
+                min-width: 80px;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 游戏头部 -->
+        <div class="game-header">
+            <div class="company-logo">金尊</div>
+            <h1 class="game-title">产品知识记忆游戏</h1>
+            <p class="game-subtitle">翻转卡片，匹配货号与产品名称</p>
+        </div>
+
+        <!-- 游戏状态 -->
+        <div class="game-stats">
+            <div class="stat-item">
+                <div class="stat-label">时间</div>
+                <div class="stat-value" id="timer">60</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">分数</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">匹配</div>
+                <div class="stat-value" id="matches">0/8</div>
+            </div>
+        </div>
+
+        <!-- 游戏控制 -->
+        <div class="game-controls">
+            <div class="difficulty-selector">
+                <button class="difficulty-btn active" data-level="easy">简单</button>
+                <button class="difficulty-btn" data-level="medium">中等</button>
+                <button class="difficulty-btn" data-level="hard">困难</button>
+            </div>
+            
+            <div class="game-buttons">
+                <button class="game-btn secondary" id="btnRestart">
+                    <span>🔄</span> 重来
+                </button>
+                <button class="game-btn primary" id="btnStart">
+                    <span>▶️</span> 开始
+                </button>
+            </div>
+        </div>
+
+        <!-- 游戏棋盘 -->
+        <div class="game-board" id="gameBoard">
+            <!-- 卡片由JavaScript动态生成 -->
+        </div>
+
+        <!-- 游戏结果 -->
+        <div class="game-result" id="gameResult">
+            <h2 class="result-title" id="resultTitle">游戏结束</h2>
+            
+            <div class="result-stats">
+                <div class="result-stat">
+                    <div class="result-stat-value" id="finalScore">0</div>
+                    <div class="result-stat-label">最终分数</div>
+                </div>
+                <div class="result-stat">
+                    <div class="result-stat-value" id="finalTime">0s</div>
+                    <div class="result-stat-label">用时</div>
+                </div>
+                <div class="result-stat">
+                    <div class="result-stat-value" id="finalMoves">0</div>
+                    <div class="result-stat-label">移动次数</div>
+                </div>
+            </div>
+
+            <div class="result-message" id="resultMessage">
+                继续努力，下次会更好！
+            </div>
+
+            <div class="result-buttons">
+                <button class="game-btn secondary" id="btnPlayAgain">
+                    <span>🔄</span> 再玩一次
+                </button>
+                <button class="game-btn primary" id="btnShare">
+                    <span>📤</span> 分享成绩
+                </button>
+            </div>
+        </div>
+
+        <!-- 产品列表 -->
+        <div class="product-list">
+            <h3 class="product-list-title">
+                <i class="icon">📋</i> 需要记忆的产品
+            </h3>
+            
+            <div class="product-categories">
+                <div class="product-category">
+                    <h4 class="category-title">
+                        <i class="icon">🥚</i> 蛋卷类
+                    </h4>
+                    <div class="product-items">
+                        <div class="product-item">
+                            <div class="product-code">1216</div>
+                            <div class="product-name">家乡蛋卷454g</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">1428</div>
+                            <div class="product-name">椰汁蛋卷454g</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">1921</div>
+                            <div class="product-name">手工蛋卷302g</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">2232</div>
+                            <div class="product-name">澳门风味蛋卷王1000g</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-category">
+                    <h4 class="category-title">
+                        <i class="icon">🍪</i> 曲奇类
+                    </h4>
+                    <div class="product-items">
+                        <div class="product-item">
+                            <div class="product-code">1112</div>
+                            <div class="product-name">什锦曲奇454g</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">2003</div>
+                            <div class="product-name">丹麦曲奇1000g</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">2126</div>
+                            <div class="product-name">丹麦曲奇1150g</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-category">
+                    <h4 class="category-title">
+                        <i class="icon">🎁</i> 礼盒类
+                    </h4>
+                    <div class="product-items">
+                        <div class="product-item">
+                            <div class="product-code">2367</div>
+                            <div class="product-name">澳门金尊礼糕点饼干双层礼盒1020g</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">2580</div>
+                            <div class="product-name">丹麦风味曲奇礼盒612g</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-category">
+                    <h4 class="category-title">
+                        <i class="icon">📦</i> 纸箱类
+                    </h4>
+                    <div class="product-items">
+                        <div class="product-item">
+                            <div class="product-code">2067</div>
+                            <div class="product-name">通用纸箱</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">2307</div>
+                            <div class="product-name">通用纸箱</div>
+                        </div>
+                        <div class="product-item">
+                            <div class="product-code">2516</div>
+                            <div class="product-name">金尊专用纸箱</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏说明 -->
+        <div class="game-instructions">
+            <h3 class="instructions-title">
+                <i class="icon">📖</i> 游戏说明
+            </h3>
+            <div class="instructions-list">
+                <div class="instruction-item">
+                    <div class="instruction-icon">1</div>
+                    <div class="instruction-text">点击卡片翻转，查看产品货号或名称</div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-icon">2</div>
+                    <div class="instruction-text">找到匹配的货号和产品名称对</div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-icon">3</div>
+                    <div class="instruction-text">在规定时间内完成所有匹配</div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-icon">4</div>
+                    <div class="instruction-text">匹配成功获得分数，错误会扣分</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="game-footer">
+            <p class="footer-text">澳门金尊电商运营部 - 员工产品培训游戏</p>
+            <p class="footer-note">建议在WiFi环境下游戏，确保最佳体验</p>
+        </div>
+    </div>
+
+    <script>
+        // 产品数据库
+        const products = [
+            { code: "1216", name: "家乡蛋卷454g", category: "蛋卷" },
+            { code: "1428", name: "椰汁蛋卷454g", category: "蛋卷" },
+            { code: "1921", name: "手工蛋卷302g", category: "蛋卷" },
+            { code: "2232", name: "澳门风味蛋卷王1000g", category: "蛋卷" },
+            { code: "1112", name: "什锦曲奇454g", category: "曲奇" },
+            { code: "2003", name: "丹麦曲奇1000g", category: "曲奇" },
+            { code: "2126", name: "丹麦曲奇1150g", category: "曲奇" },
+            { code: "2367", name: "澳门金尊礼糕点饼干双层礼盒1020g", category: "礼盒" },
+            { code: "2580", name: "丹麦风味曲奇礼盒612g", category: "礼盒" },
+            { code: "2067", name: "通用纸箱", category: "纸箱" },
+            { code: "2307", name: "通用纸箱", category: "纸箱" },
+            { code: "2516", name: "金尊专用纸箱", category: "纸箱" },
+            { code: "1966", name: "小规格纸箱", category: "纸箱" },
+            { code: "2582", name: "手工鸡蛋卷礼盒520g", category: "礼盒" },
+            { code: "2380", name: "金尊澳门手工鸡蛋卷600g", category: "蛋卷" },
+            { code: "2381", name: "金尊澳门手工鸡蛋卷600g（配礼袋）", category: "蛋卷" }
+        ];
+
+        // 游戏状态
+        let gameState = {
+            difficulty: 'easy',
+            isPlaying: false,
+            timer: 60,
+            score: 0,
+            matches: 0,
+            totalPairs: 4,
+            flippedCards: [],
+            matchedCards: new Set(),
+            moves: 0,
+            timerInterval: null,
+            startTime: null
+        };
+
+        // DOM元素
+        const gameBoard = document.getElementById('gameBoard');
+        const timerElement = document.getElementById('timer');
+        const scoreElement = document.getElementById('score');
+        const matchesElement = document.getElementById('matches');
+        const gameResult = document.getElementById('gameResult');
+        const resultTitle = document.getElementById('resultTitle');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalTimeElement = document.getElementById('finalTime');
+        const finalMovesElement = document.getElementById('finalMoves');
+        const resultMessage = document.getElementById('resultMessage');
+
+        // 初始化游戏
+        function initGame() {
+            // 设置难度
+            setDifficulty('easy');
+            
+            // 绑定事件
+            bindEvents();
+            
+            // 显示初始状态
+            updateDisplay();
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 难度选择
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!gameState.isPlaying) {
+                        setDifficulty(btn.dataset.level);
+                    }
+                });
+            });
+            
+            // 开始游戏
+            document.getElementById('btnStart').addEventListener('click', startGame);
+            
+            // 重新开始
+            document.getElementById('btnRestart').addEventListener('click', restartGame);
+            
+            // 再玩一次
+            document.getElementById('btnPlayAgain').addEventListener('click', restartGame);
+            
+            // 分享成绩
+            document.getElementById('btnShare').addEventListener('click', shareScore);
+            
+            // 防止微信下拉刷新
+            document.body.addEventListener('touchmove', function(e) {
+                if (gameState.isPlaying) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        }
+
+        // 设置难度
+        function setDifficulty(level) {
+            gameState.difficulty = level;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.level === level) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 设置卡片数量
+            switch(level) {
+                case 'easy':
+                    gameState.totalPairs = 4;
+                    gameState.timer = 60;
+                    break;
+                case 'medium':
+                    gameState.totalPairs = 6;
+                    gameState.timer = 90;
+                    break;
+                case 'hard':
+                    gameState.totalPairs = 8;
+                    gameState.timer = 120;
+                    break;
+            }
+            
+            // 更新显示
+            updateDisplay();
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            timerElement.textContent = gameState.timer;
+            scoreElement.textContent = gameState.score;
+            matchesElement.textContent = `${gameState.matches}/${gameState.totalPairs}`;
+        }
+
+        // 开始游戏
+        function startGame() {
+            if (gameState.isPlaying) return;
+            
+            gameState.isPlaying = true;
+            gameState.score = 0;
+            gameState.matches = 0;
+            gameState.moves = 0;
+            gameState.flippedCards = [];
+            gameState.matchedCards.clear();
+            gameState.startTime = Date.now();
+            
+            // 更新显示
+            updateDisplay();
+            
+            // 创建卡片
+            createCards();
+            
+            // 开始计时器
+            startTimer();
+            
+            // 隐藏结果
+            gameResult.style.display = 'none';
+            
+            // 更新按钮状态
+            document.getElementById('btnStart').innerHTML = '<span>⏸️</span> 游戏中';
+            document.getElementById('btnStart').disabled = true;
+        }
+
+        // 创建卡片
+        function createCards() {
+            gameBoard.innerHTML = '';
+            
+            // 选择产品
+            const selectedProducts = getRandomProducts(gameState.totalPairs);
+            
+            // 创建卡片对
+            let cards = [];
+            selectedProducts.forEach(product => {
+                // 货号卡片
+                cards.push({
+                    type: 'code',
+                    value: product.code,
+                    pair: product.name,
+                    category: product.category
+                });
+                
+                // 产品名称卡片
+                cards.push({
+                    type: 'name',
+                    value: product.name,
+                    pair: product.code,
+                    category: product.category
+                });
+            });
+            
+            // 洗牌
+            cards = shuffleArray(cards);
+            
+            // 创建卡片元素
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.index = index;
+                cardElement.dataset.type = card.type;
+                cardElement.dataset.value = card.value;
+                cardElement.dataset.pair = card.pair;
+                cardElement.dataset.category = card.category;
+                
+                // 卡片内容
+                let cardContent = '';
+                if (card.type === 'code') {
+                    cardContent = `
+                        <div class="card-type">货号</div>
+                        <div class="card-value">${card.value}</div>
+                    `;
+                } else {
+                    cardContent = `
+                        <div class="card-type">产品</div>
+                        <div class="card-value">${card.value}</div>
+                    `;
+                }
+                
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="card-icon">?</div>
+                            <div class="card-text">点击翻转</div>
+                        </div>
+                        <div class="card-back ${card.type}">
+                            ${cardContent}
+                        </div>
+                    </div>
+                `;
+                
+                cardElement.addEventListener('click', () => flipCard(cardElement));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        // 获取随机产品
+        function getRandomProducts(count) {
+            const shuffled = shuffleArray([...products]);
+            return shuffled.slice(0, count);
+        }
+
+        // 洗牌算法
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // 翻转卡片
+        function flipCard(cardElement) {
+            if (!gameState.isPlaying) return;
+            if (cardElement.classList.contains('flipped')) return;
+            if (cardElement.classList.contains('matched')) return;
+            if (gameState.flippedCards.length >= 2) return;
+            
+            // 翻转卡片
+            cardElement.classList.add('flipped');
+            cardElement.classList.add('pulse');
+            gameState.flippedCards.push(cardElement);
+            
+            // 移除动画类
+            setTimeout(() => {
+                cardElement.classList.remove('pulse');
+            }, 500);
+            
+            // 如果有两张卡片被翻转，检查是否匹配
+            if (gameState.flippedCards.length === 2) {
+                gameState.moves++;
+                setTimeout(() => checkMatch(), 300);
+            }
+        }
+
+        // 检查匹配
+        function checkMatch() {
+            const [card1, card2] = gameState.flippedCards;
+            const type1 = card1.dataset.type;
+            const type2 = card2.dataset.type;
+            const value1 = card1.dataset.value;
+            const value2 = card2.dataset.value;
+            const pair1 = card1.dataset.pair;
+            const pair2 = card2.dataset.pair;
+            
+            // 检查是否匹配
+            const isMatch = (
+                (type1 === 'code' && type2 === 'name' && value1 === pair2 && value2 === pair1) ||
+                (type1 === 'name' && type2 === 'code' && value1 === pair2 && value2 === pair1)
+            );
+            
+            if (isMatch) {
+                // 匹配成功
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                gameState.matchedCards.add(card1.dataset.index);
+                gameState.matchedCards.add(card2.dataset.index);
+                
+                // 增加分数
+                gameState.score += 100;
+                gameState.matches++;
+                
+                // 更新显示
+                updateDisplay();
+                
+                // 检查游戏是否结束
+                if (gameState.matches === gameState.totalPairs) {
+                    setTimeout(() => endGame(true), 500);
+                }
+                
+                // 清空翻转卡片
+                gameState.flippedCards = [];
+            } else {
+                // 匹配失败
+                gameState.score = Math.max(0, gameState.score - 20);
+                scoreElement.textContent = gameState.score;
+                
+                // 添加抖动动画
+                card1.classList.add('shake');
+                card2.classList.add('shake');
+                
+                // 延迟后翻转回来
+                setTimeout(() => {
+                    card1.classList.remove('flipped', 'shake');
+                    card2.classList.remove('flipped', 'shake');
+                    gameState.flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        // 开始计时器
+        function startTimer() {
+            clearInterval(gameState.timerInterval);
+            
+            gameState.timerInterval = setInterval(() => {
+                gameState.timer--;
+                timerElement.textContent = gameState.timer;
+                
+                // 最后10秒变红色
+                if (gameState.timer <= 10) {
+                    timerElement.style.color = '#e74c3c';
+                    timerElement.classList.add('pulse');
+                }
+                
+                // 时间到
+                if (gameState.timer <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        // 结束游戏
+        function endGame(isWin) {
+            clearInterval(gameState.timerInterval);
+            gameState.isPlaying = false;
+            
+            // 计算用时
+            const endTime = Date.now();
+            const timeUsed = Math.floor((endTime - gameState.startTime) / 1000);
+            
+            // 更新结果
+            finalScoreElement.textContent = gameState.score;
+            finalTimeElement.textContent = `${timeUsed}秒`;
+            finalMovesElement.textContent = gameState.moves;
+            
+            // 设置结果消息
+            if (isWin) {
+                resultTitle.textContent = '恭喜通关！';
+                resultTitle.style.color = '#27ae60';
+                resultMessage.textContent = getWinMessage(gameState.score, gameState.moves, timeUsed);
+                resultMessage.style.color = '#27ae60';
+            } else {
+                resultTitle.textContent = '时间到！';
+                resultTitle.style.color = '#e74c3c';
+                resultMessage.textContent = '继续努力，下次会更好！';
+                resultMessage.style.color = '#e74c3c';
+            }
+            
+            // 显示结果
+            gameResult.style.display = 'block';
+            
+            // 启用开始按钮
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStart').innerHTML = '<span>▶️</span> 开始';
+            
+            // 移除计时器动画
+            timerElement.style.color = '';
+            timerElement.classList.remove('pulse');
+        }
+
+        // 获取胜利消息
+        function getWinMessage(score, moves, time) {
+            const efficiency = score / (moves * time);
+            
+            if (efficiency > 2) {
+                return '太棒了！你是产品知识专家！🎯';
+            } else if (efficiency > 1) {
+                return '做得很好！对产品非常熟悉！👍';
+            } else {
+                return '不错！继续练习会更好！💪';
+            }
+        }
+
+        // 重新开始游戏
+        function restartGame() {
+            // 重置状态
+            gameState.timer = getTimerByDifficulty();
+            gameState.isPlaying = false;
+            gameState.score = 0;
+            gameState.matches = 0;
+            gameState.moves = 0;
+            gameState.flippedCards = [];
+            gameState.matchedCards.clear();
+            
+            // 更新显示
+            updateDisplay();
+            
+            // 隐藏结果
+            gameResult.style.display = 'none';
+            
+            // 清空棋盘
+            gameBoard.innerHTML = '';
+            
+            // 清除计时器
+            clearInterval(gameState.timerInterval);
+            
+            // 启用开始按钮
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStart').innerHTML = '<span>▶️</span> 开始';
+            
+            // 移除计时器动画
+            timerElement.style.color = '';
+            timerElement.classList.remove('pulse');
+        }
+
+        // 分享成绩
+        function shareScore() {
+            const score = gameState.score;
+            const time = finalTimeElement.textContent;
+            const moves = gameState.moves;
+            const difficulty = getDifficultyText(gameState.difficulty);
+            
+            const shareText = `我在澳门金尊产品知识记忆游戏中获得${score}分！\n难度：${difficulty}\n用时：${time}\n移动次数：${moves}\n快来挑战吧！`;
+            
+            // 尝试使用Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: '澳门金尊产品知识记忆游戏',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(err => {
+                    console.log('分享失败:', err);
+                    copyToClipboard(shareText);
+                });
+            } else {
+                // 备用方案：复制到剪贴板
+                copyToClipboard(shareText);
+            }
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert('成绩已复制到剪贴板，可以粘贴到微信分享了！');
+                } else {
+                    alert('复制失败，请手动复制：\n' + text);
+                }
+            } catch (err) {
+                alert('复制失败，请手动复制：\n' + text);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        // 根据难度获取时间
+        function getTimerByDifficulty() {
+            switch(gameState.difficulty) {
+                case 'easy': return 60;
+                case 'medium': return 90;
+                case 'hard': return 120;
+                default: return 60;
+            }
+        }
+
+        // 获取难度文本
+        function getDifficultyText(level) {
+            switch(level) {
+                case 'easy': return '简单';
+                case 'medium': return '中等';
+                case 'hard': return '困难';
+                default: return '简单';
+            }
+        }
+
+        // 页面加载完成后初始化游戏
+        document.addEventListener('DOMContentLoaded', initGame);
+        
+        // 微信环境检测
+        function isWeChat() {
+            return /MicroMessenger/i.test(navigator.userAgent);
+        }
+        
+        // 微信环境优化
+        if (isWeChat()) {
+            // 添加微信提示
+            const wechatTip = document.createElement('div');
+            wechatTip.style.cssText = `
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 12px;
+                z-index: 10000;
+                display: none;
+            `;
+            wechatTip.textContent = '点击右上角···分享给同事';
+            document.body.appendChild(wechatTip);
+            
+            // 显示提示
+            setTimeout(() => {
+                wechatTip.style.display = 'block';
+                setTimeout(() => {
+                    wechatTip.style.display = 'none';
+                }, 3000);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
